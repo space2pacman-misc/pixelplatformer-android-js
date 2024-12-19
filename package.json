@@ -1,8 +1,8 @@
 {
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "pixelplatformer",
     "app-name": "Pixel platformer DEMO",
-    "package-name": "webview",
+    "package-name": "pixelplatformer",
     "project-type": "webview",
     "icon": "./assets/icon/icon.png",
     "dist-path": "./dist",
