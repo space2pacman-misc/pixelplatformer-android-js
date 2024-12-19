@@ -1,0 +1,29 @@
+{
+    "version": "1.0.0",
+    "name": "pixelplatformer",
+    "app-name": "Pixel platformer DEMO",
+    "package-name": "webview",
+    "project-type": "webview",
+    "icon": "./assets/icon/icon.png",
+    "dist-path": "./dist",
+    "permission": [
+        "android.permission.INTERNET"
+    ],
+    "description": "Демонстрация работы движка elpy.js",
+    "main": "main.js",
+    "scripts": {
+        "start:dev": "node .",
+        "build": "androidjs build"
+    },
+    "author": "space2pacman",
+    "license": "ISC",
+    "dependencies": {
+        "androidjs": "^2.0.2"
+    },
+    "project-name": "pixelplatformer",
+    "theme": {
+        "fullScreen": true,
+        "colorPrimaryDark": "#000000"
+    },
+    "screenOrientation": "landscape"
+}

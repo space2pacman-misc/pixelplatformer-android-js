@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="shortcut icon" href="images/web/favicon.ico" >
+    <title>Pixel platformer</title>
+</head>
+<body>
+    <div class="play js-play no-select">
+        <div class="play__container">
+            <div class="play__game-title">
+                <div>Pixel<br>platformer</div>
+            </div>
+            <div class="play__button js-play-button">Play</div>
+        </div>
+    </div>
+    <div class="controls js-controls">
+        <div class="controls__arrows">
+            <div class="controls__arrow controls-arrow--left js-controls-arrow-left"></div>
+            <div class="controls__arrow-center">
+                <div class="controls__arrow controls-arrow--up js-controls-arrow-up"></div>
+                <div class="controls__arrow controls-arrow--down js-controls-arrow-down"></div>
+            </div>
+            <div class="controls__arrow controls-arrow--right js-controls-arrow-right"></div>
+        </div>
+        <div class="controls__buttons">
+            <div class="controls__button controls__button--fire js-controls-button-fire"></div>
+            <div class="controls__button controls__button--jump js-controls-button-jump"></div>
+        </div>
+    </div>
+    <canvas id="field"></canvas>
+    <script src="js/elpy.min.js"></script>
+    <script>
+        const field = document.querySelector('#field');
+        const controls = document.querySelector('.js-controls');
+        const play = document.querySelector('.js-play');
+        const playButton = document.querySelector('.js-play-button');
+        
+        playButton.addEventListener('click', () => {
+            play.style.display = 'none';
+            field.style.display = 'block';
+
+            if (isMobile()) {
+                controls.style.display = 'flex';
+                field.style.border = 'none';
+                
+                loadMobileControls();
+            }
+
+            loadGame();
+        });
+
+        function loadGame() {
+            const options = {
+                engine: {
+                    favicon: false
+                },
+                character: {
+                    images: [
+                        {
+                            paths: ['images/characters/0/character_idle_0000.png'],
+                            state: '0:idle'
+                        },
+                        {
+                            paths: ['images/characters/0/character_right_0000.png', 'images/characters/0/character_right_0001.png'],
+                            state: '0:move:right',
+                            time: 100
+                        },
+                        {
+                            paths: ['images/characters/0/character_left_0000.png', 'images/characters/0/character_left_0001.png'],
+                            state: '0:move:left',
+                            time: 100
+                        },
+                        {
+                            paths: ['images/characters/0/character_right_0001.png'],
+                            state: '0:jump:right'
+                        },
+                        {
+                            paths: ['images/characters/0/character_left_0001.png'],
+                            state: '0:jump:left'
+                        },
+                        {
+                            paths: ['images/characters/1/character_idle_0000.png'],
+                            state: '1:idle'
+                        },
+                        {
+                            paths: ['images/characters/1/character_right_0000.png', 'images/characters/1/character_right_0001.png'],
+                            state: '1:move:right',
+                            time: 100
+                        },
+                        {
+                            paths: ['images/characters/1/character_left_0000.png', 'images/characters/1/character_left_0001.png'],
+                            state: '1:move:left',
+                            time: 100
+                        },
+                        {
+                            paths: ['images/characters/1/character_right_0001.png'],
+                            state: '1:jump:right'
+                        },
+                        {
+                            paths: ['images/characters/1/character_left_0001.png'],
+                            state: '1:jump:left'
+                        },
+                        {
+                            paths: ['images/characters/2/character_idle_0000.png'],
+                            state: '2:idle'
+                        },
+                        {
+                            paths: ['images/characters/2/character_right_0000.png', 'images/characters/2/character_right_0001.png'],
+                            state: '2:move:right',
+                            time: 100
+                        },
+                        {
+                            paths: ['images/characters/2/character_left_0000.png', 'images/characters/2/character_left_0001.png'],
+                            state: '2:move:left',
+                            time: 100
+                        },
+                        {
+                            paths: ['images/characters/2/character_right_0001.png'],
+                            state: '2:jump:right'
+                        },
+                        {
+                            paths: ['images/characters/2/character_left_0001.png'],
+                            state: '2:jump:left'
+                        }
+                    ],
+                    custom: {
+                        slidingDelta: 0,
+                        evolution: 0,
+                        isMoving: true,
+                        direction: null,
+                        arrowDownIsPressed: false
+                    }
+                },
+                enemy: {
+                    images: [
+                        {
+                            paths: ['images/enemies/enemy_move_left_0.png'],
+                            state: 'move:left'
+                        },
+                        {
+                            paths: ['images/enemies/enemy_move_right_0.png'],
+                            state: 'move:right'
+                        }
+                    ],
+                    type: 'enemy',
+                    custom: {
+                        delta: -1,
+                        moving: false
+                    }
+                },
+                mainBackground: {
+                    image: {
+                        path: 'images/background/background_0000.png',
+                        repeat: true
+                    }
+                },
+                basementBackground: {
+                    color: 'black'
+                },
+                ground: {
+                    image: {
+                        path: 'images/tiles/ground.png',
+                        repeat: true
+                    },
+                    type: 'ground'
+                },
+                box: {
+                    image: 'images/tiles/box.png',
+                    type: 'box'
+                },
+                boxInversion: {
+                    image: 'images/tiles/box-inversion.png',
+                    type: 'box-inversion'
+                },
+                pipeHole: {
+                    image: 'images/tiles/pipeHole.png',
+                    type: 'pipe-hole'
+                },
+                pipe: {
+                    image: 'images/tiles/pipe.png',
+                    type: 'pipe'
+                },
+                treasure: {
+                    images: [
+                        {
+                            paths: ['images/treasure/treasure.png'],
+                            state: 'full'
+                        },
+                        {
+                            paths: ['images/treasure/treasure_empty.png'],
+                            state: 'empty'
+                        }
+                    ],
+                    type: 'treasure',
+                    custom: {
+                        hasCoin: true
+                    }
+                },
+                coin: {
+                    obstacle: false,
+                    images: [
+                        {
+                            paths: ['images/tiles/coin_0.png', 'images/tiles/coin_1.png'],
+                            state: 'rotate',
+                            time: 100
+                        }
+                    ]
+                },
+                flagpoleTip: {
+                    image: 'images/tiles/flagpoleTip.png'
+                },
+                flagpole: {
+                    obstacle: false,
+                    image: {
+                        path: 'images/tiles/flagpole.png',
+                        repeat: true
+                    }
+                },
+                flag: {
+                    images: [
+                        {
+                            paths: ['images/tiles/flag_up.png', 'images/tiles/flag_down.png'],
+                            state: 'flutters',
+                            time: 100
+                        }
+                    ]
+                },
+                bonus: {
+                    images: [
+                        {
+                            paths: ['images/tiles/mushroom.png'],
+                            state: 'mushroom'
+                        },
+                        {
+                            paths: ['images/tiles/flower.png'],
+                            state: 'flower'
+                        }
+                    ],
+                    type: 'bonus',
+                    custom: {
+                        moving: false,
+                        spawned: false,
+                        delta: 1
+                    }
+                },
+                fireball: {
+                    images: [
+                        {
+                            paths: ['images/tiles/fireball.png'],
+                            state: 'default'
+                        },
+                        {
+                            paths: ['images/effects/explosion_0.png', 'images/effects/explosion_1.png', 'images/effects/explosion_2.png'],
+                            state: 'destroy',
+                            time: 100
+                        }
+                    ],
+                    custom: {
+                        step: 5,
+                        direction: null
+                    }
+                },
+                bigGreenMountain: {
+                    image: 'images/tiles/big-green-mountain.png'
+                },
+                smallGreenMountain: {
+                    image: 'images/tiles/small-green-mountain.png'
+                },
+                smallBush: {
+                    image: 'images/tiles/bush_0.png'
+                },
+                mediumBush: {
+                    image: 'images/tiles/bush_1.png'
+                },
+                largeBush: {
+                    image: 'images/tiles/bush_2.png'
+                }
+            }
+
+            const map = {
+                objects: [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 5, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 1, 5, 1, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 5, 0, 0, 5, 0, 0, 5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 5, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 4, 2, 0, 0, 0, 0, 0, 4, 0, 0, 0, 2, 0, 2, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 2, 0, 2, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 0, 0, 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                background: [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 5, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 5, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                basement: [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 0, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 5, 5, 5, 5, 5, 5, 5, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 4],
+                    [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 3, 4]
+                ]
+            }
+
+            const enums = {
+                objects: {
+                    box: 1,
+                    enemy: 2,
+                    pipeHole: 3,
+                    pipe: 4,
+                    treasure: 5
+                },
+                background: {
+                    cloudLeft: 1,
+                    cloudCenter: 2,
+                    cloudRight: 3,
+                    bigGreenMountain: 4,
+                    smallGreenMountain: 5,
+                    smallBush: 6,
+                    mediumBush: 7,
+                    largeBush: 8
+                },
+                basement: {
+                    box: 1,
+                    rotatedPipeHole : 2,
+                    rotatedPipe: 3,
+                    pipe: 4,
+                    coin: 5
+                }
+            }
+
+            const UNIT = 24;
+            const CHARACTER_JUMP_HEIGHT = 100;
+            const CHARACTER_JUMP_REBOUND = 10;
+            const CHARACTER_JUMP_MULTIPLIER = 0.5;
+            const FALL_MULTIPLIER = 0.5;
+            const TREASURE_JUMP_HEIGHT = 10;
+            const TREASURE_JUMP_MULTIPLIER = 1;
+            const TREASURE_FALL_MULTIPLIER = 0.3;
+            const ENEMY_JUMP_MULTIPLIER = 1;
+            const ENEMY_JUMP_HEIGHT = 20;
+            const MUSHROOM_JUMP_MULTIPLIER = 1;
+            const MUSHROOM_JUMP_HEIGHT = 20;
+            const ENEMY_ROTATE = 180;
+            const DESTROY_TIME_DELAY = 500;
+            const COIN_JUMP_HEIGHT = 30;
+            const MAX_FLAG_LOWERING_HEIGHT = 270;
+            const SLIDING_DELTA_MAX_VALUE = 5;
+            const SLIDING_DELTA_DEFAULT_VALUE = 1;
+            const SLIDING_DELTA_STEP = 0.1;
+            const TREASURE_WITH_BONUS = ['treasure-9-21', 'treasure-9-78', 'treasure-5-109'];
+            const PIPE_TO_BASEMENT = 'pipe-hole-10-54';
+            const BASEMENT_EXIT = 'pipe-hole-rotated-basement-12-14';
+            const grounds = [];
+            const obstacles = [];
+            const MAX_MAP_LENGTH = (map.objects[0].length - 1) * UNIT;
+            const elpy = new Elpy('#field', isMobile() ? getWindowWidth() : 700, UNIT * 15, options.engine);
+            const mainBackground = elpy.create('main-background', -10000, 0, 20000, 360, options.mainBackground);
+            const basementBackground = elpy.create('basement-background', -10000, 1360, 20000, 360, options.basementBackground);
+            const flag = createFlag();
+            let isFlagLowered = false;
+            let characterIsMove = false;
+            let coinCounter = 0;
+            let fireballLastSpawnTime = 0;
+
+            elpy.add(mainBackground);
+            elpy.add(basementBackground)
+
+            loadHiddenObjectTextures();
+            spawnBackgroundObjects();
+            spawnObjects();
+            spawnGround();
+            spawnBasement();
+            
+            const character = elpy.create('character', (Math.floor(elpy.width / UNIT) / 2) * UNIT, UNIT * 10, 20, UNIT, options.character);
+
+            elpy.add(character);
+            character.move(60, character.y);
+            elpy.fixingCamera(character, {
+                x: true
+            });
+
+            setObstaclesParams();
+
+            elpy.on('load', () => {
+                character.collision(obstacles);
+                character.collision(grounds);
+                character.fall(FALL_MULTIPLIER);
+                character.on('move', characterOnMove);
+                character.on('fall', characterOnFall);
+                character.on('collision', characterOnCollision);
+
+                elpy.nextTick(() => {
+                    characterIsMove = true;
+                });
+            });
+
+            elpy.tick(() => {
+                if (!character.isExist) {
+                    return false;
+                }
+
+                if (character.options.custom.slidingDelta > 0) {
+                    character.options.custom.slidingDelta -= SLIDING_DELTA_STEP;
+
+                    if (Math.floor(character.options.custom.slidingDelta) < 0) {
+                        character.options.custom.slidingDelta = 0;
+                    }
+                }
+
+                if (character.options.custom.slidingDelta < 0) {
+                    character.options.custom.slidingDelta += SLIDING_DELTA_STEP;
+
+                    if (Math.floor(character.options.custom.slidingDelta) > 0) {
+                        character.options.custom.slidingDelta = 0;
+                    }
+                }
+
+                character.move(character.x + Math.floor(character.options.custom.slidingDelta), character.y);
+            });
+
+            elpy.key(key => {
+                if (!characterIsMove) {
+                    return;
+                }
+
+                if (!character.options.custom.isMoving) {
+                    character.options.custom.slidingDelta = 0;
+
+                    return;
+                }
+
+                switch(key) {
+                    case 'ArrowUp':
+                        character.jump(CHARACTER_JUMP_HEIGHT, CHARACTER_JUMP_MULTIPLIER);
+                        
+                        break;
+                    case 'ArrowLeft':
+                        if (character.options.custom.slidingDelta > -SLIDING_DELTA_MAX_VALUE) {
+                            if (character.options.custom.slidingDelta === 0) {
+                                character.options.custom.slidingDelta = -SLIDING_DELTA_DEFAULT_VALUE;
+                            }
+
+                            character.options.custom.slidingDelta -= SLIDING_DELTA_STEP * 2;
+                            character.options.custom.direction = -1;
+                        }
+                        
+                        break;
+                    case 'ArrowRight':
+                        if (character.options.custom.slidingDelta < SLIDING_DELTA_MAX_VALUE) {
+                            if (character.options.custom.slidingDelta === 0) {
+                                character.options.custom.slidingDelta = SLIDING_DELTA_DEFAULT_VALUE;
+                            }
+
+                            character.options.custom.slidingDelta += SLIDING_DELTA_STEP * 2;
+                            character.options.custom.direction = 1;
+                        }
+                        
+                        break;
+                }
+            });
+
+            elpy.keydown(key => {
+                switch(key) {
+                    case 'ControlLeft':
+                        if (character.options.custom.evolution === 2) {
+                            fireball();
+                        }
+
+                        break;
+                    case 'ArrowDown':
+                        character.options.custom.arrowDownIsPressed = true;
+
+                        break;
+                }
+            })
+
+            elpy.keyup(key => {
+                switch(key) {
+                    case 'ArrowLeft':
+                    case 'ArrowRight':
+                        character.state = `${character.options.custom.evolution}:idle`;
+                        character.animate = false;
+
+                        break;
+                    case 'ArrowDown':
+                        character.options.custom.arrowDownIsPressed = false;
+
+                        break;
+                }
+            });
+
+            function spawnBackgroundObjects() {
+                for(let i = 0; i < map.objects.length; i++) {
+                    for(let j = 0; j < map.objects[i].length; j++) {
+                        if (map.background[i][j] === enums.background.bigGreenMountain) {
+                            spawnBigGreenMountain(i, j);
+                        }
+
+                        if (map.background[i][j] === enums.background.smallGreenMountain) {
+                            spawnSmallGreenMountain(i, j);
+                        }
+
+                        if (map.background[i][j] === enums.background.smallBush) {
+                            spawnSmallBush(i, j);
+                        }
+
+                        if (map.background[i][j] === enums.background.mediumBush) {
+                            spawnMediumBush(i, j);
+                        }
+
+                        if (map.background[i][j] === enums.background.largeBush) {
+                            spawnLargeBush(i, j);
+                        }
+                    }
+                }
+            }
+
+            function spawnObjects() {
+                for(let i = 0; i < map.objects.length; i++) {
+                    for(let j = 0; j < map.objects[i].length; j++) {
+                        if (map.objects[i][j] === enums.objects.box) {
+                            spawnBoxes(i, j);
+                        }
+
+                        if (map.objects[i][j] === enums.objects.enemy) {
+                            spawnEnemies(i, j);
+                        }
+
+                        if (map.objects[i][j] === enums.objects.pipeHole) {
+                            spawnPipeHoles(i, j);
+                        }
+
+                        if (map.objects[i][j] === enums.objects.pipe) {
+                            spawnPipe(i, j);
+                        }
+
+                        if (map.objects[i][j] === enums.objects.treasure) {
+                            spawnTreasures(i, j);
+                        }
+
+                        if (map.background[i][j] === enums.background.cloudLeft) {
+                            spawnCloud('left', i, j);
+                        }
+
+                        if (map.background[i][j] === enums.background.cloudCenter) {
+                            spawnCloud('center', i, j);
+                        }
+
+                        if (map.background[i][j] === enums.background.cloudRight) {
+                            spawnCloud('right', i, j);
+                        }
+                    }
+                }
+            }
+
+            function spawnBoxes(i, j) {
+                const box = elpy.create(`box-${i}-${j}`, UNIT * j, UNIT * i, UNIT, UNIT, options.box);
+                            
+                elpy.add(box);
+                obstacles.push(box);
+            }
+
+            function spawnEnemies(i, j) {
+                const enemy = elpy.create(`enemy-${i}-${j}`, UNIT * j, UNIT * i, 15, 13, JSON.parse(JSON.stringify(options.enemy)));
+                
+                elpy.add(enemy);
+                obstacles.push(enemy);
+                enemy.on('fall', event => {
+                    enemyOnFall(enemy, event);
+                });
+            }
+
+            function spawnPipeHoles(i, j) {
+                const pipeHole = elpy.create(`pipe-hole-${i}-${j}`, UNIT * j, UNIT * i, UNIT, UNIT, options.pipeHole);
+                            
+                elpy.add(pipeHole);
+                obstacles.push(pipeHole);
+            }
+
+            function spawnPipe(i, j) {
+                const pipe = elpy.create(`pipe-${i}-${j}`, UNIT * j, UNIT * i, UNIT, UNIT, options.pipe);
+                            
+                elpy.add(pipe);
+                obstacles.push(pipe);
+            }
+
+            function spawnTreasures(i, j) {
+                const treasure = elpy.create(`treasure-${i}-${j}`, UNIT * j, UNIT * i, UNIT, UNIT, JSON.parse(JSON.stringify(options.treasure)));
+
+                elpy.add(treasure);
+                obstacles.push(treasure);
+                treasure.collision(getObstaclesEnemies());
+                treasure.on('collision', object => {
+                    if (object.options.type === 'enemy') {
+                        treasureOnCollisionEnemy(treasure, object);
+                    }
+
+                    if (object.options.type === 'bonus' && object.state === 'mushroom' && object.options.custom.spawned) {
+                        object.options.custom.delta = -object.options.custom.delta;
+                        
+                        object.jump(MUSHROOM_JUMP_HEIGHT, MUSHROOM_JUMP_MULTIPLIER);
+                        treasure.jump(TREASURE_JUMP_HEIGHT, TREASURE_JUMP_MULTIPLIER, true);
+                    }
+                });
+
+                rebound(treasure, TREASURE_FALL_MULTIPLIER);
+            }
+
+            function spawnCloud(part, i, j) {
+                const cloud = elpy.create(`cloud-${part}-${i}-${j}`, UNIT * j, UNIT * i, UNIT, UNIT, {
+                    image: `images/tiles/cloud-${part}.png`
+                });
+                
+                elpy.add(cloud);
+            }
+
+            function spawnBigGreenMountain(i, j) {
+                const bigGreenMountain = elpy.create(`big-green-mountain-${i}-${j}`, UNIT * j, (UNIT * i) - (UNIT / 2), 72, 72, options.bigGreenMountain);
+
+                bigGreenMountain.rotate(45);
+                elpy.add(bigGreenMountain);
+            }
+
+            function spawnSmallGreenMountain(i, j) {
+                const smallGreenMountain = elpy.create(`small-green-mountain-${i}-${j}`, UNIT * j, (UNIT * i) + (UNIT / 2), 72, 72, options.smallGreenMountain);
+
+                smallGreenMountain.rotate(45);
+                elpy.add(smallGreenMountain);
+            }
+
+            function spawnSmallBush(i, j) {
+                const smallBush = elpy.create(`small-bush-${i}-${j}`, UNIT * j, (UNIT * i) + 8, 42, 18, options.smallBush);
+
+                elpy.add(smallBush);
+            }
+
+            function spawnMediumBush(i, j) {
+                const mediumBush = elpy.create(`medium-bush-${i}-${j}`, UNIT * j, (UNIT * i) + 8, 62, 18, options.mediumBush);
+
+                elpy.add(mediumBush);
+            }
+
+            function spawnLargeBush(i, j) {
+                const largeBush = elpy.create(`large-bush-${i}-${j}`, UNIT * j, (UNIT * i) + 8, 82, 18, options.largeBush);
+
+                elpy.add(largeBush);
+            }
+
+            function spawnGround() {
+                const ground01 = elpy.create('ground01', 0, UNIT * 13, UNIT * 69, UNIT * 2, options.ground);
+                const ground02 = elpy.create('ground02', UNIT * 71, UNIT * 13, UNIT * 15, UNIT * 2, options.ground);
+                const ground03 = elpy.create('ground03', UNIT * 89, UNIT * 13, UNIT * 64, UNIT * 2, options.ground);
+                const ground04 = elpy.create('ground04', UNIT * 155, UNIT * 13, UNIT * 69, UNIT * 2, options.ground);
+                
+                grounds.push(ground01);
+                grounds.push(ground02);
+                grounds.push(ground03);
+                grounds.push(ground04);
+                elpy.add(grounds);
+            }
+
+            function spawnBasement() {
+                for(let i = 0; i < map.basement.length; i++) {
+                    for(let j = 0; j < map.basement[i].length; j++) {
+                        if (map.basement[i][j] === enums.basement.box) {
+                            // 1360 ?
+                            const box = elpy.create(`box-inversion-${i}-${j}`, (j * UNIT), 1360 + (i * UNIT), UNIT, UNIT, options.boxInversion);
+
+                            elpy.add(box);
+                            obstacles.push(box);
+                        }
+
+                        if (map.basement[i][j] === enums.basement.rotatedPipeHole) {
+                            // 1360 ?
+                            const pipeHole = elpy.create(`pipe-hole-rotated-basement-${i}-${j}`, (j * UNIT), 1360 + (i * UNIT), UNIT, UNIT, options.pipeHole);
+
+                            pipeHole.rotate(270);
+                            elpy.add(pipeHole);
+                            obstacles.push(pipeHole);
+                        }
+
+                        if (map.basement[i][j] === enums.basement.rotatedPipe) {
+                            // 1360 ?
+                            const pipe = elpy.create(`pipe-rotated-basement-${i}-${j}`, (j * UNIT), 1360 + (i * UNIT), UNIT, UNIT, options.pipe);
+
+                            pipe.rotate(270);
+                            elpy.add(pipe);
+                            obstacles.push(pipe);
+                        }
+
+                        if (map.basement[i][j] === enums.basement.pipe) {
+                            // 1360 ?
+                            const pipe = elpy.create(`pipe-basement-${i}-${j}`, (j * UNIT), 1360 + (i * UNIT), UNIT, UNIT, options.pipe);
+
+                            elpy.add(pipe);
+                            obstacles.push(pipe);
+                        }
+
+                        if (map.basement[i][j] === enums.basement.coin) {
+                            // 1360 ? fix collision coin
+                            const coin = elpy.create(`coin-basement-${i}-${j}`, (j * UNIT), 1360 + (i * UNIT), 18, 18, {
+                                image: 'images/tiles/coin_0.png',
+                                type: 'coin',
+                                obstacle: false
+                            });
+
+                            elpy.add(coin);
+                            obstacles.push(coin);
+                        }
+                    }
+                }
+                // 1672
+                const ground = elpy.create('ground-inversion', 0, 1672, UNIT * 17, UNIT * 2, { image: { path: 'images/tiles/ground-inversion.png', repeat: true } });
+
+                elpy.add(ground);
+                obstacles.push(ground);
+            }
+
+            function characterOnMove() {
+                if (character.x > character.track.x) {
+                    if (!character.animate) {
+                        character.animate = true;
+                    }
+
+                    character.state = `${character.options.custom.evolution}:move:right`;
+                    
+                    if (character.isJumping) {
+                        character.state = `${character.options.custom.evolution}:jump:right`;
+                    }
+                }
+
+                if (character.x < character.track.x) {
+                    if (!character.animate) {
+                        character.animate = true;
+                    }
+
+                    character.state = `${character.options.custom.evolution}:move:left`;
+
+                    if (character.isJumping) {
+                        character.state = `${character.options.custom.evolution}:jump:left`;
+                    }
+                }
+
+                if (character.x <= 0) {
+                    character.move(character.x + 1, character.y);
+                    
+                    character.state = `${character.options.custom.evolution}:idle`;
+                }
+
+                if (character.x >= MAX_MAP_LENGTH) {
+                    character.move(character.x - 1, character.y);
+                    
+                    character.state = `${character.options.custom.evolution}:idle`;
+                }
+
+                checkObstaclesInViewport();
+            }
+
+            function characterOnFall() {
+                if (character.y - character.height > elpy.height) {
+                    character.stop();
+                    elpy.destroy();
+                    
+                    loadMainScreen();
+                }
+            }
+
+            function characterOnCollision(object, side) {
+                character.state = `${character.options.custom.evolution}:idle`;
+
+                if (['enemy', 'treasure', 'box', 'pipe', 'pipe-hole', 'box-inversion'].includes(object.options.type)
+                    && (side === 'left' || side === 'right')) {
+                    character.options.custom.slidingDelta = 0;
+                }
+
+                if (object.options.type === 'enemy') {
+                    checkEnemyCollision(object, side);
+                }
+
+                if (object.options.type === 'bonus') {
+                    if (object.state === 'mushroom') {
+                        object.destroy();
+                        
+                        if (character.options.custom.evolution === 0) {
+                            characterGrowth(character.width * 2);
+                        }
+                    }
+
+                    if (object.state === 'flower') {
+                        object.destroy();
+
+                        character.options.custom.evolution = 2;
+                    }
+                }
+
+                if (checkBonusInBox(object, side)) {
+                    if (character.options.custom.evolution === 0) {
+                        mushroom(object);
+                    } else {
+                        flower(object);
+                    }
+                }
+
+                if (object.options.type === 'treasure' && side === 'bottom' && object.state === 'full') {
+                    checkTreasureCollision(object);
+                }
+
+                if (object.name === 'flagpole') {
+                    if (!isFlagLowered) {
+                        isFlagLowered = true;
+
+                        character.stop();
+
+                        character.options.custom.isMoving = false;
+
+                        lowerFlag();
+                        lowerCharacter();
+                    }
+                }
+
+                if (object.name === PIPE_TO_BASEMENT && side === 'top' && character.options.custom.arrowDownIsPressed) {
+                    goToBasement();
+                }
+                //
+                if (object.name === BASEMENT_EXIT && side === 'left') {
+                    character.move(3912, character.y - 1384);
+
+                    Object.values(elpy.objects).forEach(o => {
+                        o.y += 1360;
+                    });
+                }
+                //
+
+                if (object.options.type === 'coin') {
+                    object.destroy();
+                }
+            }
+
+            function characterGrowth(value) {
+                const offset = (value / 2) - (character.width / 2);
+                
+                elpy.offset.object.offset.x += offset;
+                elpy.offset.x -= offset;
+                character.y = character.y - character.height;
+                character.height = character.height * 2;
+                character.width = value;
+                character.options.custom.evolution = 1;
+
+                character.move(character.x - offset, character.y)
+            }
+
+            function enemyOnFall(enemy, event) {
+                if (elpy.checkObjectInViewport(enemy)) {
+                    event.resume();
+                } else {
+                    event.pause();
+                }
+                
+                if (enemy.ghost) {
+                    event.stop();
+                }
+            }
+
+            function treasureOnCollisionEnemy(treasure, object) {
+                object.ghost = true;
+                
+                object.jump(ENEMY_JUMP_HEIGHT, ENEMY_JUMP_MULTIPLIER);
+                object.rotate(ENEMY_ROTATE);
+                treasure.jump(TREASURE_JUMP_HEIGHT, TREASURE_JUMP_MULTIPLIER, true);
+                
+                delayedDestroy(object, DESTROY_TIME_DELAY);
+            }
+
+            function getObstaclesEnemies() {
+                return obstacles.filter(obstacle => obstacle.options.type === 'enemy');
+            }
+
+            function setObstaclesParams() {
+                obstacles.forEach(obstacle => {
+                    if (obstacle.options.type === 'enemy') {
+                        obstacle.on('collision', (object, side) => {
+                            if (side === 'left') {
+                                obstacle.options.custom.delta = -1;
+                                obstacle.state = 'move:left';
+                            }
+
+                            if (side === 'right' || obstacle.x >= MAX_MAP_LENGTH) {
+                                obstacle.options.custom.delta = 1;
+                                obstacle.state = 'move:right';
+                            }
+                        });
+
+                        obstacle.on('move', () => {
+                            if (obstacle.y >= elpy.height) {
+                                obstacle.destroy();
+                            }
+                        });
+
+                        obstacle.collision(obstacles);
+                        obstacle.collision(character);
+                        obstacle.collision(grounds);
+                        obstacle.fall(FALL_MULTIPLIER);
+                    }
+                });
+            }
+
+            function moveObstacle(obstacle) {
+                if (!obstacle.options.custom.moving) {
+                    obstacle.options.custom.moving = true;
+
+                    elpy.tick(() => {
+                        if (!character.isExist) {
+                            return false;
+                        }
+
+                        if (!elpy.checkObjectInViewport(obstacle) || obstacle.ghost) {
+                            obstacle.options.custom.moving = false;
+
+                            return false;
+                        }
+
+                        obstacle.move(obstacle.x + obstacle.options.custom.delta, obstacle.y);
+                    });
+                }
+            }
+
+            function checkObstaclesInViewport() {
+                obstacles.forEach(obstacle => {
+                    if (['enemy', 'bonus'].includes(obstacle.options.type)) {
+                        if (elpy.checkObjectInViewport(obstacle)) {
+                            moveObstacle(obstacle);
+                        } else {
+                            obstacle.options.custom.moving = false;
+                        }
+                    }
+                });
+            }
+
+            function checkEnemyCollision(object, side) {
+                if (side === 'top') {
+                    elpy.nextTick(() => {
+                        character.jump(CHARACTER_JUMP_REBOUND, CHARACTER_JUMP_MULTIPLIER);
+                    });
+
+                    const height = object.height / 2;
+
+                    object.height = height;
+                    object.y = object.y + height;
+                    object.ghost = true;
+
+                    delayedDestroy(object, DESTROY_TIME_DELAY);
+                }
+            }
+
+            function checkTreasureCollision(object) {
+                object.jump(TREASURE_JUMP_HEIGHT, TREASURE_JUMP_MULTIPLIER);
+
+                object.state = 'empty';
+                
+                if (object.options.custom.hasCoin) {
+                    dropCoin(object);
+                }
+            }
+
+            function rebound(object, fallMultiplier = 0.1) {
+                const y = object.y;
+
+                object.on('fall', event => {
+                    if (object.y >= y) {
+                        object.move(object.x, y);
+                        event.stop();
+                    }
+                });
+
+                object.on('jump', event => {
+                    if (object.y === object.track.y) {
+                        event.stop();
+                        object.fall(fallMultiplier)
+                    }
+                });
+            }
+
+            function dropCoin(object) {
+                const coin = elpy.create('coin' + coinCounter, object.x + 3, object.y - object.height, 18, 18, options.coin);
+
+                coinCounter++;
+
+                coin.on('jump', event => {
+                    if (coin.y === coin.track.y) {
+                        event.stop();
+
+                        delayedDestroy(coin, DESTROY_TIME_DELAY);
+                    }
+                });
+
+                coin.animate = true;
+
+                elpy.add(coin);
+                coin.jump(COIN_JUMP_HEIGHT);
+            }
+
+            function delayedDestroy(object, time) {
+                setTimeout(() => {
+                    object.destroy();
+                }, time);
+            }
+
+            function loadHiddenObjectTextures() {
+                const coin = elpy.create('coin', 0, 0, 0, 0, options.coin);
+                const bonus = elpy.create('bonus', 0, 0, 0, 0, options.bonus);
+                const fireball = elpy.create('fireball', 0, 0, 0, 0, options.fireball);
+                
+                elpy.add(coin);
+                elpy.add(bonus);
+                elpy.add(fireball);
+                elpy.on('load', () => {
+                    coin.destroy();
+                    bonus.destroy();
+                    fireball.destroy();
+                });
+            }
+
+            function createFlag() {
+                const flagpoleTip = elpy.create('flagpole-tip', (UNIT * 198) + 9, (UNIT * 3), 6, 4, options.flagpoleTip);
+                const flagpole = elpy.create('flagpole', (UNIT * 198) + 9, (UNIT * 3) + 4, 6, (UNIT * 9) - 4, options.flagpole);
+                const flag = elpy.create('flag', (UNIT * 198) + 9, (UNIT * 3) + 4, 18, 18, options.flag);
+
+                flag.animate = true;
+                
+                elpy.add(flagpoleTip);
+                elpy.add(flagpole);
+                elpy.add(flag);
+                obstacles.push(flagpole);
+
+                return flag;
+            }
+
+            function lowerFlag() {
+                if (flag.y >= MAX_FLAG_LOWERING_HEIGHT) {
+                    return;
+                }
+
+                let y = flag.y;
+
+                elpy.tick(() => {
+                    if (y >= MAX_FLAG_LOWERING_HEIGHT) {
+                        return false;
+                    }
+
+                    flag.move(flag.x, y);
+
+                    y += 2;
+                })
+            }
+            
+            function fireball() {
+                const currentDate = Date.now();
+
+                if (fireballLastSpawnTime + 100 < currentDate) {
+                    fireballLastSpawnTime = currentDate;
+                } else {
+                    return;
+                }
+
+                const width = 16;
+                const height = 16;
+                const x = character.x + (character.width / 2) - (width / 2);
+                const y = (character.y + (character.height / 2)) - (height / 4);
+                const fireball = elpy.create('fireball' + fireballLastSpawnTime, x, y, width, height, JSON.parse(JSON.stringify(options.fireball)));
+
+                fireball.options.custom.direction = character.options.custom.direction;
+
+                fireball.collision(obstacles);
+                fireball.collision(grounds);
+                fireball.fall(0.5);
+                elpy.add(fireball);
+
+                fireball.on('collision', (object, side) => {
+                    elpy.nextTick(() => {
+                        if (object.options.type === 'coin') {
+                            return;
+                        }
+
+                        if (object.options.type === 'enemy') {
+                            fireball.stop();
+                            
+                            fireball.animate = true;
+                            fireball.state = 'destroy';
+
+                            delayedDestroy(fireball, 300);
+
+                            object.ghost = true;
+
+                            object.jump(5, ENEMY_JUMP_MULTIPLIER);
+                            object.rotate(ENEMY_ROTATE);
+
+                            delayedDestroy(object, DESTROY_TIME_DELAY);
+
+                            return;
+                        }
+
+                        if (side === 'top') {
+                            fireball.jump(5, 0.5);
+
+                            return;
+                        }
+
+                        if (side === 'left' || side === 'right') {
+                            fireball.stop();
+
+                            fireball.animate = true;
+                            fireball.state = 'destroy';
+
+                            delayedDestroy(fireball, 300);
+
+                            return;
+                        }
+                    });
+                });
+
+                elpy.tick(() => {
+                    if (fireball.state === 'destroy') {
+                        return false;
+                    }
+
+                    if (fireball.state === 'default') {
+                        fireball.rotate(fireball.degrees + 5);
+                        fireball.move(fireball.x + (fireball.options.custom.step * fireball.options.custom.direction), fireball.y);
+                    }
+                });
+            }
+
+            async function lowerCharacter() {
+                removeCollisionWithCharacter();
+
+                await moveCharacterDown();
+                await moveCharacterRight();
+                await moveCharacterToCastle();
+
+                elpy.destroy();
+
+                loadMainScreen();
+            }
+
+            function removeCollisionWithCharacter() {
+                character.obstacles.forEach(obstacle => {
+                    if (obstacle.name.includes('box')) {
+                        character.removeCollision(obstacle);
+                    }
+                });
+            }
+
+            function moveCharacterDown() {
+                return new Promise(resolve => {
+                    elpy.tick(() => {
+                        if (character.y >= 264) {
+                            resolve();
+
+                            return false;
+                        }
+
+                        character.move(character.x, character.y + 2);
+                    });
+                });
+            }
+
+            function moveCharacterRight() {
+                return new Promise(resolve => {
+                    elpy.tick(() => {
+                        if (character.x >= 4766) {
+                            resolve();
+
+                            return false;
+                        }
+
+                        character.move(character.x + 1, character.y);
+                    })
+                });
+            }
+
+            function moveCharacterToCastle() {
+                return new Promise(resolve => {
+                    character.fall();
+                    character.jump(10, 0.1, true);
+                    elpy.tick(() => {
+                        if (character.x >= 4898) {
+                            resolve();
+                            
+                            return false;
+                        }
+
+                        character.move(character.x + 1, character.y);
+                    });
+                });
+            }
+
+            function mushroom(object) {
+                let traveledDistance  = 0;
+                const MAX_DISTANCE = UNIT / 2;
+                const bonus = elpy.create(`bonus-${object.name}`, object.x + ((UNIT / 2) / 2), object.y, UNIT / 2, UNIT / 2, JSON.parse(JSON.stringify(options.bonus)));
+
+                object.options.custom.hasCoin = false;
+
+                checkTreasureCollision(object);
+                
+                bonus.collision(character);
+                bonus.collision(obstacles);
+                bonus.collision(grounds);
+                obstacles.forEach(obstacle => {
+                    if (obstacle !== object) {
+                        obstacle.collision(bonus);
+                    }
+                });
+                obstacles.push(bonus);
+                character.collision(bonus);
+                elpy.add(bonus);
+                
+                elpy.tick(() => {
+                    if (traveledDistance >= MAX_DISTANCE) {
+                        bonus.fall(FALL_MULTIPLIER);
+
+                        bonus.options.custom.spawned = true;
+
+                        moveObstacle(bonus);
+
+                        return false;
+                    }
+
+                    traveledDistance++;
+                    
+                    bonus.y -= 1;
+                });
+                
+                bonus.on('collision', (object, side) => {
+                    if (object === character) {
+                        bonus.destroy();
+
+                        if (character.options.custom.evolution === 0) {
+                            characterGrowth(character.width * 2);
+                        }
+                    }
+
+                    if (side === 'left') {
+                        bonus.options.custom.delta = -1;
+                    }
+
+                    if (side === 'right') {
+                        bonus.options.custom.delta = 1;
+                    }
+                });
+
+                bonus.on('move', () => {
+                    if (bonus.y >= elpy.height) {
+                        bonus.destroy();
+                    }
+                });
+            }
+
+            function flower(object) {
+                let traveledDistance  = 0;
+                const width = 18;
+                const height = 36;
+                const MAX_DISTANCE = UNIT / 2;
+                const bonus = elpy.create(`bonus-${object.name}`, object.x + 3, object.y - UNIT, width, height, JSON.parse(JSON.stringify(options.bonus)));
+
+                object.options.custom.hasCoin = false;
+                
+                bonus.state = 'flower';
+                
+                character.collision(bonus);
+                elpy.add(bonus);
+
+                elpy.tick(() => {
+                    if (traveledDistance >= MAX_DISTANCE) {
+                        bonus.options.custom.spawned = true;
+
+                        return false;
+                    }
+
+                    traveledDistance++;
+                    
+                    bonus.y -= 1;
+                });
+            }
+
+            function checkBonusInBox(object, side) {
+                return TREASURE_WITH_BONUS.includes(object.name) && side === 'bottom' && object.state === 'full';
+            }
+
+            function goToBasement() {
+                character.move(50, 1300);
+                //
+                Object.values(elpy.objects).forEach(o => {
+                    o.y -= 1360;
+                });
+                //
+            }
+
+            function getWindowWidth() {
+                return window.outerWidth % 2 === 0 ? window.outerWidth : window.outerWidth + 1;
+            }
+
+            elpy.load();
+
+            window._debug = function() {
+                window._elpy = elpy;
+                window._character = character;
+
+                elpy.click((x, y) => {
+                    const offset = {
+                        x: x + (elpy.offset.object.options.fixedCamera.x ? elpy.offset.object.offset.x : 0),
+                        y: y + (elpy.offset.object.options.fixedCamera.y ? elpy.offset.object.offset.y : 0)
+                    }
+
+                    for(const name in elpy.objects) {
+                        const object = elpy.objects[name];
+
+                        if (offset.x > object.x
+                        && offset.x < (object.x + object.width)
+                        && offset.y > object.y
+                        && offset.y < (object.y + object.height)) {
+                            console.log(object)
+                        }
+                    }
+                });
+            }
+        }
+        
+        function loadMobileControls() {
+            const controlsArrowLeft = document.querySelector('.js-controls-arrow-left');
+            const controlsArrowRight = document.querySelector('.js-controls-arrow-right');
+            const controlsArrowUp = document.querySelector('.js-controls-arrow-up');
+            const controlsArrowDown = document.querySelector('.js-controls-arrow-down');
+            const controlsButtonFire = document.querySelector('.js-controls-button-fire');
+            const controlsButtonJump = document.querySelector('.js-controls-button-jump');
+            
+            controlsArrowLeft.addEventListener('touchstart', () => {
+                document.dispatchEvent(new KeyboardEvent('keydown',{'code':'ArrowLeft'}));
+            });
+
+            controlsArrowLeft.addEventListener('touchend', () => {
+                document.dispatchEvent(new KeyboardEvent('keyup',{'code':'ArrowLeft'}));
+            });
+
+            controlsArrowRight.addEventListener('touchstart', () => {
+                document.dispatchEvent(new KeyboardEvent('keydown',{'code':'ArrowRight'}));
+            });
+
+            controlsArrowRight.addEventListener('touchend', () => {
+                document.dispatchEvent(new KeyboardEvent('keyup',{'code':'ArrowRight'}));
+            });
+
+            controlsArrowUp.addEventListener('touchstart', () => {
+                document.dispatchEvent(new KeyboardEvent('keydown',{'code':'ArrowUp'}));
+            });
+
+            controlsArrowUp.addEventListener('touchend', () => {
+                document.dispatchEvent(new KeyboardEvent('keyup',{'code':'ArrowUp'}));
+            });
+
+            controlsArrowDown.addEventListener('touchstart', () => {
+                document.dispatchEvent(new KeyboardEvent('keydown',{'code':'ArrowDown'}));
+            });
+
+            controlsArrowDown.addEventListener('touchend', () => {
+                document.dispatchEvent(new KeyboardEvent('keyup',{'code':'ArrowDown'}));
+            });
+
+            controlsButtonFire.addEventListener('touchstart', () => {
+                document.dispatchEvent(new KeyboardEvent('keydown',{'code':'ControlLeft'}));
+            });
+
+            controlsButtonJump.addEventListener('touchstart', () => {
+                document.dispatchEvent(new KeyboardEvent('keydown',{'code':'ArrowUp'}));
+            });
+
+            controlsButtonJump.addEventListener('touchend', () => {
+                document.dispatchEvent(new KeyboardEvent('keyup',{'code':'ArrowUp'}));
+            });
+        }
+
+        function isMobile() {
+            let check = false;
+            
+            (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4))) check = true;})( navigator.userAgent || navigator.vendor || window.opera);
+            
+            return check;
+        };
+
+        function loadMainScreen() {
+            play.style.display = 'flex';
+            field.style.display = 'none';
+            controls.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
