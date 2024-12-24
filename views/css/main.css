@@ -5,12 +5,14 @@ html {
 body {
     margin: 0;
     overflow: hidden;
+    background-color: rgb(203 129 94 / 75%);
 }
 
 #field {
     margin: auto;
     border: 1px solid #dcdcdc;
     display: none;
+    touch-action: none;
 }
 
 .play {
@@ -24,8 +26,6 @@ body {
     position: absolute;
     width: 100%;
     height: 100%;
-    left: 0;
-    top: 0;
 }
 
 .play__container {
@@ -36,11 +36,11 @@ body {
 .play__game-title {
     background: #b88463;
     width: 300px;
-    height: 200px;
+    height: 100px;
     border: 2px solid #633f44;
     color: #fff;
     font-family: Arial;
-    font-size: 36px;
+    font-size: 24px;
     font-weight: bold;
     text-transform: uppercase;
     display: flex;
@@ -49,6 +49,17 @@ body {
     border-radius: 4px;
     text-shadow: 2px 2px 0px black;
     margin-bottom: 20px;
+    flex-direction: column;
+    box-sizing: border-box;
+}
+
+.play__game-title-parts {
+    width: 100%;
+    padding-left: 20px;
+}
+
+.play__game-time-stat {
+    font-size: 24px;
 }
 
 .no-select {
@@ -58,10 +69,15 @@ body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-  }
+}
+
+.play__game-titles {
+    display: flex;
+    gap: 20px;
+}
 
 .play__button {
-    width: 300px;
+    width: 100%;
     height: 100px;
     color: #fff;
     font-family: Arial;
@@ -78,6 +94,8 @@ body {
     box-shadow: 0px 4px rgba(0, 0, 0, 0.4), 0px 4px #ffd948;
     cursor: pointer;
     text-shadow: 2px 2px 0px black;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .play__button:active {
@@ -104,6 +122,7 @@ body {
     left: 0;
     width: 100%;
     justify-content: space-between;
+    touch-action: none;
 }
 
 .controls__arrows {
@@ -173,14 +192,136 @@ body {
     background-image: url('./../images/controls/b.png');
 }
 
-.fullscreen {
-    background-image: url('./../images/controls/fullscreen.png');
+.timer {
+    width: 144px;
+    height: 48px;
+    line-height: 48px;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+    color: #fff;
+    font-family: Arial;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    border-radius: 4px;
+    border: 2px solid rgba(0, 0, 0, 0.25);
+    text-shadow: 1px 1px 0px black;
+    position: absolute;
+    top: 10px;
+    display: none;
+    touch-action: none;
+}
+
+.timer__current {
+    background: #dadce7;
+    left: 30px;
+}
+
+.timer__best {
+    background: #ffd948;
+    left: 198px;
+}
+
+.settings__tile-button {
+    background-image: url('./../images/controls/settings.png');
     width: 48px;
     height: 48px;
     z-index: 1;
     position: absolute;
     top: 10px;
-    right: 10px;
+    right: 30px;
+    display: none;
+    touch-action: none;
+}
+
+.settings__container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    display: none;
+    touch-action: none;
+}
+
+.settings__container:after {
+    display: block;
+    content: "";
+    background: rgb(0 0 0 / 50%);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+}
+
+.settings__window {
+    background: #b88463;
+    width: 620px;
+    height: 100px;
+    border: 2px solid #633f44;
+    color: #fff;
+    font-family: Arial;
+    font-size: 36px;
+    font-weight: bold;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    text-shadow: 2px 2px 0px black;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    z-index: 1;
+    position: relative;
+}
+
+.settings__window-close-button {
+    width: 32px;
+    height: 32px;
+    background-image: url('../images/controls/check_square_grey_cross.png');
+    position: absolute;
+    right: -16px;
+    top: -16px;
+}
+
+.settings__button {
+    width: 90%;
+    height: 50px;
+    color: #fff;
+    font-family: Arial;
+    text-align: center;
+    line-height: 50px;
+    font-size: 30px;
+    font-weight: bold;
+    border-radius: 4px;
+    border: 2px solid rgba(0, 0, 0, 0.25);
+    box-shadow: 0px 4px rgba(0, 0, 0, 0.4), 0px 4px #fff;
+    transition: all, .075s;
+    transform: translate3d(0,0,0);
+    background: #ffd948;
+    box-shadow: 0px 4px rgba(0, 0, 0, 0.4), 0px 4px #ffd948;
+    cursor: pointer;
+    text-shadow: 2px 2px 0px black;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.settings__button:active {
+    filter: brightness(105%);
+    transform: translateY(4px);
+    box-shadow: 0px 0px;
+}
+
+.settings__button:before {
+    content: "";
+    display: block;
+    width: calc(100% - 6px);
+    height: 42%;
+    background: rgba(0, 0, 0, 0.1);
+    position: absolute;
+    bottom: 3px;
+    left: 3px;
 }
 
 @media (max-width: 360px) {
@@ -192,6 +333,15 @@ body {
 
     .controls__buttons {
         height: 230px;
+    }
+
+    .play__game-title {
+        width: 100%;
+        font-size: 24px;
+    }
+
+    .play__button {
+        width: 100%;
     }
 }
 
@@ -209,6 +359,15 @@ body {
         display: flex;
     }
 
+    .play__game-title {
+        width: 220px;
+        font-size: 24px;
+    }
+
+    .play__game-time-stat {
+        font-size: 18px;
+    }
+
     .controls__arrows {
         margin-left: 10px;
     }
@@ -217,29 +376,32 @@ body {
         margin-right: 10px;
     }
 
-    @media (orientation: portrait) {
-        .controls__buttons {
-            flex-direction: column;
-            align-items: end;
-        }
+    .play__container {
+        align-items: center;
     }
 
-    @media (orientation: landscape) {
-        .play__container {
-            flex-direction: row;
-            align-items: center;
-        }
+    #field {
+        position: absolute;
+        z-index: -1;
+        bottom: 0;
+        left: 0;
+    }
 
-        .play__game-title {
-            margin-bottom: 0px;
-            margin-right: 20px;
-        }
+    .timer__current {
+        background: #dadce7;
+        left: 10px;
+    }
+    
+    .timer__best {
+        background: #ffd948;
+        left: 168px;
+    }
 
-        #field {
-            position: absolute;
-            z-index: -1;
-            bottom: 0;
-            left: 0;
-        }
+    .settings__tile-button {
+        right: 10px;
+    }
+
+    .settings__window {
+        width: 460px;
     }
 }

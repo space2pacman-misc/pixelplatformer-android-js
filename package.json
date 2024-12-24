@@ -1,8 +1,8 @@
 {
     "version": "1.0.1",
-    "name": "pixelplatformer",
-    "app-name": "Pixel platformer DEMO",
-    "package-name": "pixelplatformer",
+    "name": "pixelplatformerspeedrun",
+    "app-name": "Pixel platformer speedrun",
+    "package-name": "pixelplatformerspeedrun",
     "project-type": "webview",
     "icon": "./assets/icon/icon.png",
     "dist-path": "./dist",
@@ -20,7 +20,7 @@
     "dependencies": {
         "androidjs": "^2.0.2"
     },
-    "project-name": "pixelplatformer",
+    "project-name": "pixelplatformerspeedrun",
     "theme": {
         "fullScreen": true,
         "colorPrimaryDark": "#000000"
